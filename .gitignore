@@ -178,4 +178,7 @@ $RECYCLE.BIN/
 # Windows shortcuts
 *.lnk
 
+# Ignore the .env file to keep sensitive information secure
+.env
+
 # End of https://www.toptal.com/developers/gitignore/api/linux,macos,windows,pycharm+all,git
