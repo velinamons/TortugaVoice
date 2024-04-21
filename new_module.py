@@ -1,13 +1,18 @@
-class Genius:
-    def __int__(self):
-        self._memory = -1
+from __future__ import annotations
 
-    def get_memory(self):
+class Genius:
+    def __init__(self, memory: int | None = None):
+        self._memory = memory
+
+    def get_memory(self) -> int | None:
         return self._memory
 
     def set_memory(self, number: int) -> None:
         self._memory = number
 
-new_genius = Genius()
-print(new_genius.get_memory())
-print(new_genius.set_memory(5))
+if __name__ == "__main__":
+    new_genius = Genius(5)
+    print(new_genius.get_memory())
+    print(new_genius.set_memory(5))
+
+
