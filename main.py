@@ -1,33 +1,25 @@
-from dotenv import load_dotenv
-import os
+import config
 from telegram import Update
 from telegram.ext import Application, CommandHandler, ContextTypes
 
-# Load the .env file to read environment variables
-load_dotenv()
+class TelegramBot:
+    def __init__(self, token):
+        self.application = Application.builder().token(token).build()
+        self._add_command_handlers()
 
-# Get the Telegram bot token from the environment variable
-telegram_token = os.getenv('TELEGRAM_TOKEN')
+    def _add_command_handlers(self):
+        self.application.add_handler(CommandHandler('start', self.start))
 
-# Define a command handler for the '/start' command
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user = update.effective_user
-    await context.bot.send_message(
-        chat_id=update.effective_chat.id,
-        text=f"Hello, {user.first_name}! Welcome to our Telegram bot."
-    )
+    async def start(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        user = update.effective_user
+        await context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text=f"Hello, {user.first_name}! Welcome to our Telegram bot."
+        )
 
-# Define the main function to run the Telegram bot
-def main():
-    # Initialize the Telegram bot with the token
-    application = Application.builder().token(telegram_token).build()
+    def run(self):
+        self.application.run_polling()
 
-    # Add a handler for the '/start' command
-    application.add_handler(CommandHandler('start', start))
-
-    # Start the bot to poll for messages
-    application.run_polling()
-
-# Entry point for the script
 if __name__ == "__main__":
-    main()
+    bot = TelegramBot(config.TELEGRAM_TOKEN)
+    bot.run()
