@@ -17,5 +17,3 @@ logger.add(
     format=log_format,
     level="DEBUG"
 )
-
-loguru_logger = logger

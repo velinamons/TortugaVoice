@@ -1,6 +1,6 @@
 import re
 
-from logger_config import loguru_logger
+from logger_config import logger
 from telegram import Update
 from telegram.ext import Application, CommandHandler, ContextTypes, filters, MessageHandler
 
@@ -28,13 +28,13 @@ class TelegramBot:
             text=f"Hello, {user.first_name}! Welcome to our Telegram bot."
         )
         context.user_data["has_started"] = True
-        loguru_logger.info("Starting the Telegram bot")
+        logger.info("Starting the Telegram bot")
 
     async def calculate(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         result = self.UNPROCESSABLE_CONTEXT_MSG
         if context.user_data.get("has_started"):
             text = update.message.text
-            loguru_logger.info(f"Received text: {text}")
+            logger.info(f"Received text: {text}")
 
             keyword_pos = text.find(TGBotCommands.CALCULATE.value)
             expression = text[keyword_pos + len(TGBotCommands.CALCULATE.value):].strip()
@@ -83,4 +83,4 @@ if __name__ == "__main__":
     try:
         main()
     except Exception as e:
-        loguru_logger.error(f"An error occurred: {e}")
+        logger.error(f"An error occurred: {e}")
