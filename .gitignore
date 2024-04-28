@@ -181,6 +181,6 @@ $RECYCLE.BIN/
 # Ignore the .env file to keep sensitive information secure
 .env
 
-.log
+*.log
 
 # End of https://www.toptal.com/developers/gitignore/api/linux,macos,windows,pycharm+all,git
