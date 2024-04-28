@@ -74,6 +74,13 @@ class TelegramBot:
         self.application.run_polling()
 
 
-if __name__ == "__main__":
+def main():
     bot = TelegramBot(config.TELEGRAM_TOKEN)
     bot.run()
+
+
+if __name__ == "__main__":
+    try:
+        main()
+    except Exception as e:
+        loguru_logger.error(f"An error occurred: {e}")

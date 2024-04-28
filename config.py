@@ -2,6 +2,7 @@ from dotenv import load_dotenv
 import os
 
 environment_state = os.getenv('ENVIRONMENT_STATE')
+
 if environment_state == 'LOCAL':
     load_dotenv()
 
