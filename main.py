@@ -1,33 +1,86 @@
-from dotenv import load_dotenv
-import os
+import re
+
+from logger_config import logger
 from telegram import Update
-from telegram.ext import Application, CommandHandler, ContextTypes
+from telegram.ext import Application, CommandHandler, ContextTypes, filters, MessageHandler
 
-# Load the .env file to read environment variables
-load_dotenv()
+import config
+from enums import TGBotCommands
 
-# Get the Telegram bot token from the environment variable
-telegram_token = os.getenv('TELEGRAM_TOKEN')
 
-# Define a command handler for the '/start' command
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user = update.effective_user
-    await context.bot.send_message(
-        chat_id=update.effective_chat.id,
-        text=f"Hello, {user.first_name}! Welcome to our Telegram bot."
-    )
+class TelegramBot:
+    README_LINK = "https://github.com/velinamons/TortugaVoice?tab=readme-ov-file#usage"
+    UNPROCESSABLE_CONTEXT_MSG = f"Unprocessable context, read details at [TortugaVoice]({README_LINK})"
 
-# Define the main function to run the Telegram bot
+    def __init__(self, token):
+        self.application = Application.builder().token(token).build()
+        self._add_command_handlers()
+
+    def _add_command_handlers(self):
+        self.application.add_handler(CommandHandler(TGBotCommands.START.value, self.start))
+        self.application.add_handler(CommandHandler(TGBotCommands.CALCULATE.value, self.calculate))
+        self.application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, self.handle_message))
+
+    async def start(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        user = update.effective_user
+        await context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text=f"Hello, {user.first_name}! Welcome to our Telegram bot."
+        )
+        context.user_data["has_started"] = True
+        logger.info("Starting the Telegram bot")
+
+    async def calculate(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        result = self.UNPROCESSABLE_CONTEXT_MSG
+        if context.user_data.get("has_started"):
+            text = update.message.text
+            logger.info(f"Received text: {text}")
+
+            keyword_pos = text.find(TGBotCommands.CALCULATE.value)
+            expression = text[keyword_pos + len(TGBotCommands.CALCULATE.value):].strip()
+            result = self._calculate_expression(expression)
+
+        await context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text=result,
+            parse_mode="MarkdownV2"
+        )
+
+    def _calculate_expression(self, expression: str) -> str:
+        expression = expression.replace("plus", "+").replace("minus", "-")
+        valid_expression = "".join(re.findall(r"[\d]+|[-+]", expression))
+        try:
+            result = eval(valid_expression)
+            return f"Calculated with result: {result}"
+        except Exception:
+            return self.UNPROCESSABLE_CONTEXT_MSG
+
+    async def handle_message(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        text = update.message.text
+
+        for keyword in TGBotCommands:
+            command = keyword.value
+            if command in text:
+                await getattr(self, command)(update, context)
+                break
+        else:
+            await context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text=self.UNPROCESSABLE_CONTEXT_MSG,
+                parse_mode="MarkdownV2"
+            )
+
+    def run(self):
+        self.application.run_polling()
+
+
 def main():
-    # Initialize the Telegram bot with the token
-    application = Application.builder().token(telegram_token).build()
+    bot = TelegramBot(config.TELEGRAM_TOKEN)
+    bot.run()
 
-    # Add a handler for the '/start' command
-    application.add_handler(CommandHandler('start', start))
 
-    # Start the bot to poll for messages
-    application.run_polling()
-
-# Entry point for the script
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except Exception as e:
+        logger.error(f"An error occurred: {e}")
