@@ -1,25 +1,24 @@
 import re
 
-from logging_config import loguru_logger
+from logger_config import loguru_logger
 from telegram import Update
 from telegram.ext import Application, CommandHandler, ContextTypes, filters, MessageHandler
 
 import config
-from commands import Commands
+from enums import TGBotCommands
 
 
 class TelegramBot:
-    keywords = {"calculate": "calculate"}
     README_LINK = "https://github.com/velinamons/TortugaVoice?tab=readme-ov-file#usage"
-    UNPROCESSABLE_CONTEXT_MSG = f"Unprocessable context, read comments at [TortugaVoice]({README_LINK})"
+    UNPROCESSABLE_CONTEXT_MSG = f"Unprocessable context, read details at [TortugaVoice]({README_LINK})"
 
     def __init__(self, token):
         self.application = Application.builder().token(token).build()
         self._add_command_handlers()
 
     def _add_command_handlers(self):
-        self.application.add_handler(CommandHandler(Commands.START.value, self.start))
-        self.application.add_handler(CommandHandler(Commands.CALCULATE.value, self.calculate))
+        self.application.add_handler(CommandHandler(TGBotCommands.START.value, self.start))
+        self.application.add_handler(CommandHandler(TGBotCommands.CALCULATE.value, self.calculate))
         self.application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, self.handle_message))
 
     async def start(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -37,9 +36,9 @@ class TelegramBot:
             text = update.message.text
             loguru_logger.info(f"Received text: {text}")
 
-            keyword_pos = text.find(Commands.CALCULATE.value)
-            expression = text[keyword_pos + len(Commands.CALCULATE.value):].strip()
-            result = self.calculate_expression(expression)
+            keyword_pos = text.find(TGBotCommands.CALCULATE.value)
+            expression = text[keyword_pos + len(TGBotCommands.CALCULATE.value):].strip()
+            result = self._calculate_expression(expression)
 
         await context.bot.send_message(
             chat_id=update.effective_chat.id,
@@ -47,7 +46,7 @@ class TelegramBot:
             parse_mode="MarkdownV2"
         )
 
-    def calculate_expression(self, expression: str) -> str:
+    def _calculate_expression(self, expression: str) -> str:
         expression = expression.replace("plus", "+").replace("minus", "-")
         valid_expression = "".join(re.findall(r"[\d]+|[-+]", expression))
         try:
@@ -59,9 +58,10 @@ class TelegramBot:
     async def handle_message(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         text = update.message.text
 
-        for keyword in self.keywords:
-            if keyword in text:
-                await getattr(self, self.keywords[keyword])(update, context)
+        for keyword in TGBotCommands:
+            command = keyword.value
+            if command in text:
+                await getattr(self, command)(update, context)
                 break
         else:
             await context.bot.send_message(

@@ -1,6 +1,6 @@
 from enum import Enum
 
 
-class Commands(Enum):
+class TGBotCommands(Enum):
     START = "start"
     CALCULATE = "calculate"
